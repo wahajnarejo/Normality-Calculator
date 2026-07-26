@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Normality Calculator (Mass ⇄ Normality, Solid & Liquid, 90+ Chemicals)</title>
+<meta name="description" content="Free online normality calculator supporting solid chemicals and concentrated liquid acids/bases (with density and purity). Calculate mass or volume needed, or reverse-calculate normality. Includes 90+ chemicals.">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: #0f1115;
+    color: #eaeaea;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    background: #171a21;
+    border: 1px solid #262a33;
+    border-radius: 16px;
+    padding: 32px;
+    max-width: 480px;
+    width: 100%;
+  }
+  h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: #ffffff;
+  }
+  .subtitle {
+    font-size: 14px;
+    color: #8b90a0;
+    margin-bottom: 24px;
+  }
+  label {
+    font-size: 13px;
+    color: #a4a9b8;
+    display: block;
+    margin-bottom: 6px;
+  }
+  select, input {
+    width: 100%;
+    background: #0f1115;
+    border: 1px solid #2c303a;
+    color: #eaeaea;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 15px;
+    margin-bottom: 18px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  select:focus, input:focus {
+    border-color: #4f7cff;
+  }
+  .field { margin-bottom: 18px; position: relative; }
+  #chemList {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    background: #171a21;
+    border: 1px solid #2c303a;
+    border-radius: 8px;
+    max-height: 220px;
+    overflow-y: auto;
+    margin-top: 4px;
+  }
+  #chemList div {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  #chemList div:hover {
+    background: #1d212b;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .toggle-btn {
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #2c303a;
+    background: #0f1115;
+    color: #a4a9b8;
+    font-size: 14px;
+    cursor: pointer;
+    text-align: center;
+  }
+  .toggle-btn.active {
+    background: #1a2740;
+    border-color: #2f4f8f;
+    color: #7fa6ff;
+  }
+  .results {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 4px;
+  }
+  .result-box {
+    background: #1d212b;
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .result-box.accent {
+    background: #1a2740;
+    border: 1px solid #2f4f8f;
+  }
+  .result-label {
+    font-size: 12px;
+    color: #8b90a0;
+    margin-bottom: 4px;
+  }
+  .result-box.accent .result-label { color: #7fa6ff; }
+  .result-value {
+    font-size: 20px;
+    font-weight: 600;
+    color: #ffffff;
+  }
+  .result-box.accent .result-value { color: #7fa6ff; }
+  .formula {
+    font-size: 11px;
+    color: #6b7080;
+    margin-top: 16px;
+    text-align: center;
+    line-height: 1.6;
+  }
+  footer {
+    text-align: center;
+    font-size: 12px;
+    color: #4d5160;
+    margin-top: 20px;
+  }
+  #liquidFields, #inputNorm { display: none; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Normality calculator</h1>
+  <p class="subtitle">Solid and concentrated liquid chemicals. Calculates mass/volume needed, or reverse-calculates normality. 90+ chemicals included.</p>
+
+  <div class="toggle">
+    <div class="toggle-btn active" id="modeMassBtn">Find mass / volume</div>
+    <div class="toggle-btn" id="modeNormBtn">Find normality</div>
+  </div>
+
+  <div class="field">
+    <label for="chemSearch">Chemical (type to search)</label>
+    <input type="text" id="chemSearch" placeholder="e.g. HCl, sulfuric, sodium..." autocomplete="off">
+    <div id="chemList"></div>
+  </div>
+
+  <div class="row">
+    <div>
+      <label for="mm">Molar mass (g/mol)</label>
+      <input type="number" id="mm" step="0.01">
+    </div>
+    <div>
+      <label for="nf">n-factor</label>
+      <input type="number" id="nf" step="1">
+    </div>
+  </div>
+
+  <div class="toggle">
+    <div class="toggle-btn active" id="stateSolidBtn">Solid</div>
+    <div class="toggle-btn" id="stateLiquidBtn">Liquid (concentrated)</div>
+  </div>
+
+  <div class="row" id="liquidFields">
+    <div>
+      <label for="density">Density (g/mL)</label>
+      <input type="number" id="density" step="0.001">
+    </div>
+    <div>
+      <label for="purity">Purity / assay (%)</label>
+      <input type="number" id="purity" step="0.1">
+    </div>
+  </div>
+
+  <div class="row" id="inputMass">
+    <div>
+      <label for="normality">Normality (N)</label>
+      <input type="number" id="normality" value="0.1" step="0.01">
+    </div>
+    <div>
+      <label for="volume1">Solution volume (L)</label>
+      <input type="number" id="volume1" value="1" step="0.1">
+    </div>
+  </div>
+
+  <div class="row" id="inputNorm">
+    <div>
+      <label for="mass" id="massOrVolLabel">Mass (g)</label>
+      <input type="number" id="mass" value="5" step="0.01">
+    </div>
+    <div>
+      <label for="volume2">Solution volume (L)</label>
+      <input type="number" id="volume2" value="1" step="0.1">
+    </div>
+  </div>
+
+  <div class="results">
+    <div class="result-box">
+      <div class="result-label" id="resLabel1">Pure mass needed</div>
+      <div class="result-value" id="res1">--</div>
+    </div>
+    <div class="result-box accent">
+      <div class="result-label" id="resLabel2">Result</div>
+      <div class="result-value" id="res2">--</div>
+    </div>
+  </div>
+
+  <p class="formula">
+    Pure mass = N &times; V &times; equivalent weight &nbsp;|&nbsp; Actual mass = pure mass &divide; (purity/100)<br>
+    Volume to measure (liquids) = actual mass &divide; density
+  </p>
+
+  <footer>Free normality calculator &middot; 90+ chemicals &middot; solid + liquid support</footer>
+</div>
+
+<script>
+var chemicals = [
+["HCl (conc., liquid)",36.46,1,1.19,37],["H2SO4 (conc., liquid)",98.08,2,1.84,98],["HNO3 (conc., liquid)",63.01,1,1.42,68],
+["CH3COOH (glacial, liquid)",60.05,1,1.05,99.7],["NH4OH (conc., liquid)",35.05,1,0.90,28],["HF (conc., liquid)",20.01,1,1.15,48],
+["H3PO4 (conc., liquid)",98.00,3,1.685,85],["HClO4 (conc., liquid)",100.46,1,1.67,70],
+["H3BO3 (boric acid, solid)",61.83,1,0,0],["HCOOH (formic acid, liquid)",46.03,1,1.22,85],
+["Oxalic acid (H2C2O4.2H2O, solid)",126.07,2,0,0],["Citric acid (solid)",192.12,3,0,0],
+["Tartaric acid (solid)",150.09,2,0,0],["Benzoic acid (solid)",122.12,1,0,0],["Sulfamic acid (solid)",97.09,1,0,0],
+["H3PO3 (solid)",82.00,2,0,0],["HBr (conc., liquid)",80.91,1,1.49,48],["HI (conc., liquid)",127.91,1,1.70,57],
+["H2CO3 (solid basis)",62.03,2,0,0],
+["NaOH (solid)",40.00,1,0,0],["KOH (solid)",56.11,1,0,0],["Ca(OH)2 (solid)",74.09,2,0,0],["Mg(OH)2 (solid)",58.32,2,0,0],
+["Ba(OH)2 (solid)",171.34,2,0,0],["Al(OH)3 (solid)",78.00,3,0,0],["LiOH (solid)",23.95,1,0,0],
+["Fe(OH)3 (solid)",106.87,3,0,0],["Fe(OH)2 (solid)",89.86,2,0,0],["Zn(OH)2 (solid)",99.42,2,0,0],
+["NaCl (solid)",58.44,1,0,0],["Na2CO3 (solid)",105.99,2,0,0],["NaHCO3 (solid)",84.01,1,0,0],
+["CaCO3 (solid)",100.09,2,0,0],["Na2SO4 (solid)",142.04,2,0,0],
+["K2Cr2O7 (redox, solid)",294.18,6,0,0],["KMnO4 (redox, acidic, solid)",158.03,5,0,0],
+["Na2S2O3 (redox, solid)",158.11,1,0,0],["I2 (redox, solid)",253.81,2,0,0],
+["FeSO4 (redox, solid)",151.91,1,0,0],["FeSO4.7H2O (redox, solid)",278.01,1,0,0],
+["CuSO4 (solid)",159.61,2,0,0],["CuSO4.5H2O (solid)",249.68,2,0,0],
+["AgNO3 (solid)",169.87,1,0,0],["ZnSO4 (solid)",161.47,2,0,0],["Na2C2O4 (solid)",134.00,2,0,0],
+["NH4Cl (solid)",53.49,1,0,0],["(NH4)2SO4 (solid)",132.14,2,0,0],
+["CaCl2 (solid)",110.98,2,0,0],["MgSO4 (solid)",120.37,2,0,0],["MgCl2 (solid)",95.21,2,0,0],
+["BaCl2 (solid)",208.23,2,0,0],["Na2HPO4 (solid)",141.96,2,0,0],["NaH2PO4 (solid)",119.98,1,0,0],
+["K2CO3 (solid)",138.21,2,0,0],["KCl (solid)",74.55,1,0,0],["KBr (solid)",119.00,1,0,0],["KI (solid)",166.00,1,0,0],
+["NaOCl (redox, liquid)",74.44,2,1.10,12],["H2O2 (redox, liquid, 30%)",34.01,2,1.11,30],
+["Na2SO3 (solid)",126.04,2,0,0],["K2S2O8 (solid)",270.32,2,0,0],
+["CH3COONa (solid)",82.03,1,0,0],["Na2EDTA (solid)",372.24,2,0,0],["Na3PO4 (solid)",163.94,3,0,0],
+["(NH4)2Cr2O7 (redox, solid)",252.06,6,0,0],
+["FeCl3 (solid)",162.20,3,0,0],["FeCl2 (solid)",126.75,2,0,0],["AlCl3 (solid)",133.34,3,0,0],
+["Al2(SO4)3 (solid)",342.15,6,0,0],["CaSO4 (solid)",136.14,2,0,0],["Ca3(PO4)2 (solid)",310.18,6,0,0],
+["NiSO4 (solid)",154.75,2,0,0],["Pb(NO3)2 (solid)",331.20,2,0,0],["SnCl2 (solid)",189.60,2,0,0],
+["SnCl4 (solid)",260.50,4,0,0],["CrO3 (redox, solid)",100.00,6,0,0],["H2C2O4 (anhydrous, solid)",90.03,2,0,0],
+["NaNO3 (solid)",84.99,1,0,0],["KNO3 (solid)",101.10,1,0,0],["Na2CrO4 (solid)",161.97,2,0,0],
+["K2CrO4 (solid)",194.19,2,0,0],["CoCl2 (solid)",129.83,2,0,0],["MnCl2 (solid)",125.84,2,0,0],
+["MnSO4 (solid)",151.00,2,0,0],["Bi(NO3)3 (solid)",395.00,3,0,0],["Zn(NO3)2 (solid)",189.36,2,0,0],
+["Cu(NO3)2 (solid)",187.56,2,0,0],["Pb(CH3COO)2 (solid)",325.29,2,0,0],["NaF (solid)",41.99,1,0,0],
+["KF (solid)",58.10,1,0,0],["NH4NO3 (solid)",80.04,1,0,0],["Na2S (solid)",78.04,2,0,0],
+["CaO (solid)",56.08,2,0,0],["MgO (solid)",40.30,2,0,0],["ZnO (solid)",81.38,2,0,0],
+["Na2O (solid)",61.98,2,0,0],["K2O (solid)",94.20,2,0,0]
+];
+
+var searchInput = document.getElementById('chemSearch');
+var listBox = document.getElementById('chemList');
+var mmInput = document.getElementById('mm');
+var nfInput = document.getElementById('nf');
+var densityInput = document.getElementById('density');
+var purityInput = document.getElementById('purity');
+
+function selectChemical(c) {
+  searchInput.value = c[0];
+  mmInput.value = c[1];
+  nfInput.value = c[2];
+  if (parseFloat(c[3]) > 0) {
+    densityInput.value = c[3];
+    purityInput.value = c[4];
+    setLiquid();
+  } else {
+    setSolid();
+  }
+  listBox.style.display = 'none';
+  calc();
+}
+
+function renderList(filter) {
+  var q = filter.toLowerCase();
+  var matches = chemicals.filter(function(c) { return c[0].toLowerCase().indexOf(q) !== -1; });
+  listBox.innerHTML = '';
+  if (matches.length === 0) { listBox.style.display = 'none'; return; }
+  matches.forEach(function(c) {
+    var item = document.createElement('div');
+    item.textContent = c[0] + ' (' + c[1] + ' g/mol, n=' + c[2] + ')';
+    item.addEventListener('click', function() { selectChemical(c); });
+    listBox.appendChild(item);
+  });
+  listBox.style.display = 'block';
+}
+
+searchInput.addEventListener('focus', function() { renderList(searchInput.value); });
+searchInput.addEventListener('input', function() { renderList(searchInput.value); });
+document.addEventListener('click', function(e) {
+  if (!listBox.contains(e.target) && e.target !== searchInput) { listBox.style.display = 'none'; }
+});
+var liquidFields = document.getElementById('liquidFields');
+var stateSolidBtn = document.getElementById('stateSolidBtn');
+var stateLiquidBtn = document.getElementById('stateLiquidBtn');
+var massOrVolLabel = document.getElementById('massOrVolLabel');
+var isLiquid = false;
+
+function setSolid() {
+  isLiquid = false;
+  stateSolidBtn.classList.add('active');
+  stateLiquidBtn.classList.remove('active');
+  liquidFields.style.display = 'none';
+  massOrVolLabel.textContent = 'Mass (g)';
+  calc();
+}
+function setLiquid() {
+  isLiquid = true;
+  stateLiquidBtn.classList.add('active');
+  stateSolidBtn.classList.remove('active');
+  liquidFields.style.display = 'grid';
+  massOrVolLabel.textContent = 'Volume measured (mL)';
+  calc();
+}
+stateSolidBtn.addEventListener('click', setSolid);
+stateLiquidBtn.addEventListener('click', setLiquid);
+
+var mode = 'mass';
+var modeMassBtn = document.getElementById('modeMassBtn');
+var modeNormBtn = document.getElementById('modeNormBtn');
+var inputMass = document.getElementById('inputMass');
+var inputNorm = document.getElementById('inputNorm');
+
+modeMassBtn.addEventListener('click', function() {
+  mode = 'mass';
+  modeMassBtn.classList.add('active');
+  modeNormBtn.classList.remove('active');
+  inputMass.style.display = 'grid';
+  inputNorm.style.display = 'none';
+  calc();
+});
+modeNormBtn.addEventListener('click', function() {
+  mode = 'norm';
+  modeNormBtn.classList.add('active');
+  modeMassBtn.classList.remove('active');
+  inputMass.style.display = 'none';
+  inputNorm.style.display = 'grid';
+  calc();
+});
+
+function calc() {
+  var mm = parseFloat(mmInput.value), nf = parseFloat(nfInput.value);
+  var eqWt = mm / nf;
+  var res1 = document.getElementById('res1'), res2 = document.getElementById('res2');
+  var lbl1 = document.getElementById('resLabel1'), lbl2 = document.getElementById('resLabel2');
+
+  if (mode === 'mass') {
+    var N = parseFloat(document.getElementById('normality').value);
+    var V = parseFloat(document.getElementById('volume1').value);
+    if (!mm || !nf || !N || !V) { res1.textContent = '--'; res2.textContent = '--'; return; }
+    var pureMass = N * V * eqWt;
+    lbl1.textContent = 'Pure mass needed';
+    res1.textContent = pureMass.toFixed(3) + ' g';
+    if (isLiquid) {
+      var density = parseFloat(densityInput.value), purity = parseFloat(purityInput.value);
+      if (!density || !purity) { res2.textContent = '--'; return; }
+      var actualMass = pureMass / (purity / 100);
+      var vol = actualMass / density;
+      lbl2.textContent = 'Volume to measure';
+      res2.textContent = vol.toFixed(2) + ' mL';
+    } else {
+      lbl2.textContent = 'Weigh directly';
+      res2.textContent = pureMass.toFixed(3) + ' g';
+    }
+  } else {
+    var V2 = parseFloat(document.getElementById('volume2').value);
+    if (isLiquid) {
+      var volMeasured = parseFloat(document.getElementById('mass').value);
+      var density2 = parseFloat(densityInput.value), purity2 = parseFloat(purityInput.value);
+      if (!mm || !nf || !volMeasured || !V2 || !density2 || !purity2) { res1.textContent = '--'; res2.textContent = '--'; return; }
+      var actualMass2 = volMeasured * density2;
+      var pureMass2 = actualMass2 * (purity2 / 100);
+      var N2 = pureMass2 / (eqWt * V2);
+      lbl1.textContent = 'Pure mass used';
+      res1.textContent = pureMass2.toFixed(3) + ' g';
+      lbl2.textContent = 'Normality';
+      res2.textContent = N2.toFixed(4) + ' N';
+    } else {
+      var mass2 = parseFloat(document.getElementById('mass').value);
+      if (!mm || !nf || !mass2 || !V2) { res1.textContent = '--'; res2.textContent = '--'; return; }
+      var N3 = mass2 / (eqWt * V2);
+      lbl1.textContent = 'Equivalent weight';
+      res1.textContent = eqWt.toFixed(2) + ' g/eq';
+      lbl2.textContent = 'Normality';
+      res2.textContent = N3.toFixed(4) + ' N';
+    }
+  }
+}
+
+[mmInput, nfInput, densityInput, purityInput, document.getElementById('normality'),
+ document.getElementById('volume1'), document.getElementById('mass'), document.getElementById('volume2')].forEach(function(el) {
+  el.addEventListener('input', calc);
+});
+
+selectChemical(chemicals[0]);
+</script>
+
+</body>
+</html>
